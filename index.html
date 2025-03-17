@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Weather</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+        <link rel="stylesheet" href="styles.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+        <script src="script.js"></script>
+    </head>
+    <body>
+        <div class="weather" id="weather">
+            <div id="mainScreen">
+                <div class="rows" id="row1">
+                    <div class="column1">
+                        <div id="currentWeather">
+                            <div id="currentWeatherText">
+                                current weather  text
+                            </div>
+                            <div id="currentWeatherIcon">
+                                current weather icon
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column2 buttons">
+                        column 2
+                        <button id="getCurrentWeather">Get Current Weather</button>
+                        <button id="getForecast">Get Forecast</button>
+                    </div>
+                </div>
+                <div class="rows" id="row2">
+                    <div class="forecast" id="forecast"> <!-- divs created here by getForecast() -->
+                    </div>
+                </div>
+            </div>
+            <div class="detailedForecast" id="detailedDiv">
+                <table class="detailedForecast" id="detailedTable">
+                    <caption class="detailedForecast" id="detailedCaption"></caption>
+                    <tbody class="detailedForecast">
+                        <tr class="detailedForecast detailedRow" id="detailedRow1">
+                        </tr>
+                        <tr class="detailedForecast detailedRow" id="detailedRow2">
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </body>
+</html>
