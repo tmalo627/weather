@@ -1,116 +1,43 @@
 $(document).ready(function() {
 
-    
-// disabled for testing
-// window.onload = function() {
-//     $('.detailedForecast').hide();
-//     getLocation();
-// }
+$('.detailedForecast').hide();
 
-// for testing window load event only
-window.addEventListener('load',function() {
-    console.log('test window load');
-});
+let coords;
+let coordsStr;
 
-// pro api options
-// const apiUrl2 = 'https://pro.openweathermap.org/'
-// 'data/2.5/forecast/hourly?' // 4-day forecast with 1-hour intervals, provide cnt=1-96
-
-// one successful call
-// 'data/2.5/forecast/daily?',  // 16-day forecast with daily intervals, provide cnt=1-16; 401 unauthorized
-
-// syntax for 16 day forecast with daily intervals
-// api.openweathermap.org/data/2.5/forecast/daily?lat={lat}&lon={lon}&cnt={cnt}&appid={API key}
-// let callUrl = apiUrl + callType + coordsStr + key + units; // set inside function, keep for syntax reference
-
-const locCoords = [];
-let coordsStr = '';
-
-const callTypes = [
-    'data/2.5/weather?', // Current weather
-    'data/2.5/forecast?', // 5-day forecast with 3-hour intervals
-    'data/2.5/air_pollution?' // Air pollution
-]
-
-const apiUrl = 'https://api.openweathermap.org/'
-// let cntStr = '&cnt=' + cnt // number of daily forecasts, 1-16
-const units = '&units=imperial'; // provide options for metric, imperial, standard
-
-const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-const daysOfWeek = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-let t = new Date().getDay();
-let today = daysOfWeek[t];
-const monthsOfYear = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-let formattedDate = '';
-
-const weatherIconBase = `https://openweathermap.org/img/wn/`;
-
-$('#getCurrentWeather').click(getCurrentWeather);
-$('#getForecast').click(getForecast);
-
-function getLocation() {
-    console.log('fetching location...');
-    let lat;
-    let lon;
-    navigator.geolocation.getCurrentPosition((position) => {
-        lat = position.coords.latitude;
-        lon = position.coords.longitude;
-        console.log ('lat is ' + lat + '; ' + 'lon is ' + lon);
-        if (!lat || !lon) { // default to Portage, IN
-            lat = 41.5662081;
-            lon = -87.2022016;
-            console.log ('lat is ' + lat + '; ' + 'lon is ' + lon);
+async function getGeolocation() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error("Geolocation is not supported by your browser.")); // set default location
+        } else {
+            navigator.geolocation.getCurrentPosition(resolve, reject);
         }
-        locCoords.push(lat);
-        locCoords.push(lon);
-        coordsStr = 'lat=' + locCoords[0] + '&lon=' + locCoords[1]; // update if user changes location
-        console.log('coordsStr = ' + coordsStr);
     });
 }
 
-function mmToInches(mm) {
-    return mm / 25.4;
-}
-
-function formatDate(data) {
-    let day = daysOfWeek[new Date(data.dt * 1000).getDay()]
-    let month = monthsOfYear[new Date(data.dt * 1000).getMonth()]
-    let date = new Date(data.dt * 1000).getDate()
-    let year = new Date(data.dt * 1000).getFullYear()
-    formattedDate = day + ', ' + month + ' ' + date + ', ' + year;
-    return formattedDate;
-}
-
-function formatTime(data) {
-    let month = new Date(data.dt * 1000).getMonth() + 1;
-    let date = new Date(data.dt * 1000).getDate();
-    let year = new Date(data.dt * 1000).getFullYear();
-    let hours = (new Date(data.dt * 1000).getHours()).toString().padStart(2, '0');
-    let minutes = (new Date(data.dt * 1000).getMinutes()).toString().padStart(2, '0');
-    let seconds = (new Date(data.dt * 1000).getSeconds()).toString().padStart(2, '0');
-    // let formattedTime = month + '/' + date + '/' + year + ' ' + hours + ':' + minutes + ':' + seconds;
-    let formattedTime = hours + ':' + minutes + ':' + seconds;
-    return formattedTime;
+async function setCoords() {
+    coords = await getGeolocation();
+    coordsStr = `lat=${coords.coords.latitude}&lon=${coords.coords.longitude}`
 }
 
 async function getCurrentWeather() {
-    console.log('coordsStr' + coordsStr);
+    await setCoords();
     let callType = callTypes[0];
     let callUrl = apiUrl + callType + coordsStr + key + units;
-    console.log(callUrl);
+    console.log(callUrl)
     try {
         const response = await fetch(callUrl);
         if (!response.ok) {
             throw new Error('Network response was not ok');
-        }    
+        }
         const data = await response.json();
         $('#currentWeatherText').html(
             formatDate(data) + '<br>' +
             data.weather[0].description + ' ' + '<br>' +
-            data.main.temp + '°F, ' + 'Feels like: ' + data.main.feels_like + '°F' + '<br>' + 
-            'Humidity: ' + data.main.humidity + '%' + '<br>' + 
-            'Wind speed: ' + data.wind.speed + ' mph' + '<br>' + 
-            'Pressure: ' + data.main.pressure + ' hPa' + '<br>' + 
+            data.main.temp + '°F, ' + 'Feels like: ' + data.main.feels_like + '°F' + '<br>' +
+            'Humidity: ' + data.main.humidity + '%' + '<br>' +
+            'Wind speed: ' + data.wind.speed + ' mph' + '<br>' +
+            'Pressure: ' + data.main.pressure + ' hPa' + '<br>' +
             'Sunrise: ' + new Date(data.sys.sunrise * 1000).toLocaleTimeString() + ', Sunset: ' + new Date(data.sys.sunset * 1000).toLocaleTimeString()
         );
         $('#currentWeatherIcon').html(
@@ -121,13 +48,13 @@ async function getCurrentWeather() {
             'width':'auto'
         });
     } catch (error) {
-        console.error('There was a problem with the fetch operation:', error);  
-    }  
-}    
+        console.error('There was a problem with the fetch operation:', error);
+    }
+}
 
 async function getForecast() {
+    await setCoords();
     let callType = callTypes[1];
-    let coordsStr = 'lat=' + locCoords[0] + '&lon=' + locCoords[1];
     let callUrl = apiUrl + callType + coordsStr + key + units;
     let days = [];
     $('#forecast').html('');
@@ -204,7 +131,6 @@ async function detailedForecast(day) {
     $('#mainScreen').hide();
 
     // construct api call
-    let coordsStr = 'lat=' + locCoords[0] + '&lon=' + locCoords[1];
     var callUrl = apiUrl + callTypes[1] + coordsStr + key + units;
 
     // compare 'day' parameter with value for today
@@ -261,7 +187,7 @@ async function detailedForecast(day) {
                 txtDiv.html(
                     t + '<br>' +
                     data.list[i].weather[0].description + '<br>' +
-                    'Hi: ' + data.list[i].main.temp_max + '°F' + '<br>' + 
+                    'Hi: ' + data.list[i].main.temp_max + '°F' + '<br>' +
                     'Lo: ' + data.list[i].main.temp_min + '°F' + '<br>' +
                     'Humid: ' + data.list[i].main.humidity + '%' + '<br>' +
                     'Precip: ' + data.list[i].pop.toFixed(2) * 100 + '%'
@@ -274,24 +200,23 @@ async function detailedForecast(day) {
                 castSteps.push(castStep);
             }
         }
-        // add css for <td> sizing
-        for (let c = 0; c < castSteps.length; c++) {
-            while (c < castSteps.length/2) {
-                $('#detailedRow1').append(castSteps[c]);
-                c++;
+        for (let i = 0; i < castSteps.length; i++) {
+            while (i < castSteps.length/2) {
+                $('#detailedRow1').append(castSteps[i]);
+                i++;
             }
-            while (c >= castSteps.length/2 && c < castSteps.length) {
-                $('#detailedRow2').append(castSteps[c]);
-                c++;
+            while (i >= castSteps.length/2 && i < castSteps.length) {
+                $('#detailedRow2').append(castSteps[i]);
+                i++;
             }
         }
-        $('.detailedRow').css({
+        $('.detailedRow').css({ // add css for .detailedRow
             'border-radius':'4px',
             'background-color':'lightblue',
             'border-style':'inset',
             'height':'40%'
         });
-        $('td').css({
+        $('td').css({ // add css for <td>
             'width':'calc(100%/(' + castSteps.length + '/2) - 10%)',
             'border-style':'double groove',
             'border-color':'lightgreen',
@@ -304,10 +229,80 @@ async function detailedForecast(day) {
         console.error('There was a problem with the fetch operation:', error);
     }
 }
-    
+
+const key = '&appid=f05ce6df94dd940445286e28b5e58df7';
+
+// pro api options
+// const apiUrl2 = 'https://pro.openweathermap.org/data.2.5/'
+// 'forecast/hourly?' // 4-day forecast with 1-hour intervals, provide cnt=1-96
+
+// one successful call
+// 'forecast/daily?',  // 16-day forecast with daily intervals, provide cnt=1-16; 401 unauthorized
+
+// syntax for 16 day forecast with daily intervals
+// api.openweathermap.org/data/2.5/forecast/daily?lat={lat}&lon={lon}&cnt={cnt}&appid={API key}
+// let callUrl = apiUrl + callType + coordsStr + key + units; // set inside function, keep for syntax reference
+
+// const locCoords = [];
+// let coordsStr = '';
+// console.log(coordsStr);
+
+const callTypes = [
+    'weather?', // Current weather
+    'forecast?', // 5-day forecast with 3-hour intervals
+    'air_pollution?' // Air pollution
+]
+
+const apiUrl = 'https://api.openweathermap.org/data/2.5/'
+// let cntStr = '&cnt=' + cnt // number of daily forecasts, 1-16
+const units = '&units=imperial'; // provide options for metric, imperial, standard
+
+const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const daysOfWeek = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+let t = new Date().getDay();
+let today = daysOfWeek[t];
+const monthsOfYear = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+let formattedDate = '';
+
+const weatherIconBase = `https://openweathermap.org/img/wn/`;
+
+$('#getCurrentWeather').click(getCurrentWeather);
+$('#getForecast').click(getForecast);
+
+////////////////////////////////////////////////////////////////////////
+
+ 
+
+///////////////////////////////////////////////////////////////////////
+
+function mmToInches(mm) {
+    return mm / 25.4;
+}
+
+function formatDate(data) {
+    let day = daysOfWeek[new Date(data.dt * 1000).getDay()]
+    let month = monthsOfYear[new Date(data.dt * 1000).getMonth()]
+    let date = new Date(data.dt * 1000).getDate()
+    let year = new Date(data.dt * 1000).getFullYear()
+    formattedDate = day + ', ' + month + ' ' + date + ', ' + year;
+    return formattedDate;
+}
+
+function formatTime(data) {
+    let month = new Date(data.dt * 1000).getMonth() + 1;
+    let date = new Date(data.dt * 1000).getDate();
+    let year = new Date(data.dt * 1000).getFullYear();
+    let hours = (new Date(data.dt * 1000).getHours()).toString().padStart(2, '0');
+    let minutes = (new Date(data.dt * 1000).getMinutes()).toString().padStart(2, '0');
+    let seconds = (new Date(data.dt * 1000).getSeconds()).toString().padStart(2, '0');
+    // let formattedTime = month + '/' + date + '/' + year + ' ' + hours + ':' + minutes + ':' + seconds;
+    let formattedTime = hours + ':' + minutes + ':' + seconds;
+    return formattedTime;
+}
+
 $('.forecast').on('click', '.days', function() {
     let day = $(this).data('param');
     return detailedForecast(day);
 });
 
-});
+}); // closes $(document).ready function
